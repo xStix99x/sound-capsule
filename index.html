@@ -11,7 +11,7 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js"></script>
   
   <style>
     @keyframes pulse-ring {
@@ -168,7 +168,7 @@
           </div>
         </div>
 
-        <!-- Action Buttons (Visible simultaneously after recording) -->
+        <!-- Action Buttons -->
         <div class="space-y-3 pt-2">
           <button id="send-btn" onclick="sendRecording()" class="w-full py-4 px-6 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none">
             <i data-lucide="send" class="w-5 h-5"></i>
@@ -292,7 +292,7 @@
         title: "Sound Capsule",
         subtitle: "Record a story, song, or lullaby for <span class='font-bold text-teal-300'>Alice</span> directly from your phone! Feel free to include a personal note as well.",
         warning: "<strong class='font-semibold text-amber-300'>Please record in a quiet room, and be sure you aren't using any bluetooth headphones or hearing aids.</strong>",
-        tipsTitle: "💡 Tips for the Best Recording",
+        tipsTitle: "Tips for the Best Recording",
         tip1: "Hold the phone about 6 to 8 inches away from your mouth.",
         tip2: "Turn off background TVs, fans, or AC units.",
         tip3: "Do not use bluetooth headphones or hearing aids; a dedicated microphone is okay.",
@@ -319,7 +319,7 @@
         title: "Sound Capsule",
         subtitle: "¡Graba una historia, canción o nana para <span class='font-bold text-teal-300'>Alice</span> directamente desde tu teléfono! ¡Siéntete libre de incluir una nota personal también!",
         warning: "<strong class='font-semibold text-amber-300'>Por favor, graba en una habitación silenciosa y asegúrate de no usar auriculares Bluetooth ni audífonos.</strong>",
-        tipsTitle: "💡 Consejos para la Mejor Grabación",
+        tipsTitle: "Consejos para la Mejor Grabación",
         tip1: "Sostén el teléfono a unos 15 o 20 cm de tu boca.",
         tip2: "Apaga televisores, ventiladores o aire acondicionado de fondo.",
         tip3: "No uses auriculares Bluetooth ni audífonos; un micrófono dedicado está bien.",
@@ -345,6 +345,12 @@
     };
 
     let currentLang = 'en';
+
+    function refreshIcons() {
+      if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+      }
+    }
 
     function setLanguage(lang) {
       currentLang = lang;
@@ -382,7 +388,12 @@
       document.getElementById('ui-validation-msg').innerText = t.validationMsg;
       document.getElementById('ui-upload-failed-msg').innerText = t.uploadFailedMsg;
       document.getElementById('ui-download-fallback-btn').innerText = t.downloadFallbackBtn;
-      document.getElementById('ui-uploading-text').childNodes[2].nodeValue = " " + t.uploading;
+      
+      const uploadingNode = document.getElementById('ui-uploading-text');
+      if (uploadingNode && uploadingNode.childNodes.length > 2) {
+        uploadingNode.childNodes[2].nodeValue = " " + t.uploading;
+      }
+
       document.getElementById('ui-send-btn-text').innerText = t.sendBtn;
       document.getElementById('ui-record-another-btn').innerText = t.recordAnother;
       document.getElementById('ui-success-title').innerText = t.successTitle;
@@ -391,7 +402,7 @@
       document.getElementById('ui-settings-footer').innerText = t.settingsFooter;
       document.getElementById('ui-passcode-title').innerText = t.passcodeTitle;
       document.getElementById('ui-passcode-prompt').innerText = t.passcodePrompt;
-      lucide.createIcons();
+      refreshIcons();
     }
 
     function toggleTips() {
@@ -479,7 +490,6 @@
           const audioUrl = URL.createObjectURL(audioBlob);
           document.getElementById('audio-preview').src = audioUrl;
           
-          // Show review section with both action buttons enabled
           document.getElementById('controls-step-1').classList.add('hidden');
           document.getElementById('controls-step-2').classList.remove('hidden');
           document.getElementById('send-btn').disabled = false;
@@ -680,7 +690,7 @@
       document.getElementById('upload-progress-container').classList.remove('hidden');
       document.getElementById('send-btn').disabled = true;
       document.getElementById('re-record-btn').disabled = true;
-      document.getElementById('re-record-btn').classList.add('hidden'); // Hide re-record during active upload
+      document.getElementById('re-record-btn').classList.add('hidden');
       document.getElementById('user-name').disabled = true;
       document.getElementById('song-title').disabled = true;
 
@@ -734,7 +744,6 @@
           sendRecording(retryCount + 1);
         }, 1500);
       } else {
-        // RE-ENABLE UI CONTROLS IF UPLOAD FAILS COMPLETELY
         document.getElementById('upload-progress-container').classList.add('hidden');
         document.getElementById('upload-error-box').classList.remove('hidden');
         document.getElementById('send-btn').disabled = false;
