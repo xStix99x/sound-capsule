@@ -78,4 +78,722 @@
             <li id="ui-tip-3">Do not use bluetooth headphones or hearing aids; a dedicated microphone is okay.</li>
           </ol>
           <div class="pt-2 flex justify-center">
-            <img id="diagram-img" src="
+            <img id="diagram-img" src="https://github.com/xStix99x/sound-capsule/blob/main/Diagram.jpg?raw=true" alt="Recording Distance Diagram" class="rounded-xl border border-teal-800/80 max-h-48 object-contain shadow-md">
+          </div>
+        </div>
+      </div>
+
+      <!-- VISUALIZER / RECORDING STATUS AREA -->
+      <div id="recording-area" class="flex flex-col items-center justify-center py-6 min-h-[160px] rounded-2xl bg-[#041924]/60 border border-teal-900/60 relative overflow-hidden">
+        
+        <!-- Live Visualizer Canvas -->
+        <canvas id="visualizer" class="w-full h-24 hidden"></canvas>
+
+        <!-- Idle Mic Graphic -->
+        <div id="idle-icon" class="flex flex-col items-center text-teal-500/60 space-y-2">
+          <div class="w-16 h-16 rounded-full bg-[#082230] flex items-center justify-center border border-teal-800/60">
+            <i data-lucide="music-4" class="w-8 h-8 text-teal-400"></i>
+          </div>
+          <span id="ui-ready-text" class="text-xs uppercase tracking-wider font-bold text-teal-400/80">Ready to record</span>
+        </div>
+
+        <!-- Timer Display -->
+        <div id="timer-display" class="hidden text-3xl font-mono font-bold tracking-wider text-rose-400 mt-2">
+          00:00
+        </div>
+      </div>
+
+      <!-- RECORDING CONTROLS -->
+      <div id="controls-step-1" class="flex flex-col items-center gap-4">
+        <button id="record-btn" onclick="toggleRecording()" class="w-full py-4 px-6 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-3 transition-all duration-200 bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 active:scale-95">
+          <i data-lucide="disc" class="w-6 h-6"></i>
+          <span id="record-btn-text">Start Recording</span>
+        </button>
+      </div>
+
+      <!-- REVIEW & FORM STEP (HIDDEN INITIALLY) -->
+      <div id="controls-step-2" class="space-y-5 hidden">
+        
+        <!-- Audio Preview Player -->
+        <div class="bg-[#041924]/80 p-3 rounded-2xl border border-teal-800/60">
+          <audio id="audio-preview" controls class="w-full focus:outline-none"></audio>
+        </div>
+
+        <!-- User Metadata Inputs -->
+        <div class="space-y-4">
+          <div>
+            <label id="ui-label-name" class="block text-xs font-semibold uppercase tracking-wider text-teal-200/90 mb-1">
+              Your Name <span class="text-rose-400">*</span>
+            </label>
+            <input type="text" id="user-name" placeholder="e.g. Grandma Helen" class="w-full bg-[#041924]/90 border border-teal-800/80 rounded-xl px-4 py-3 text-sm text-white placeholder-teal-600/70 focus:outline-none focus:border-teal-400 transition-colors">
+          </div>
+
+          <div>
+            <label id="ui-label-title" class="block text-xs font-semibold uppercase tracking-wider text-teal-200/90 mb-1">
+              Song or Story Title <span class="text-rose-400">*</span>
+            </label>
+            <input type="text" id="song-title" placeholder="e.g. You Are My Sunshine" class="w-full bg-[#041924]/90 border border-teal-800/80 rounded-xl px-4 py-3 text-sm text-white placeholder-teal-600/70 focus:outline-none focus:border-teal-400 transition-colors">
+          </div>
+        </div>
+
+        <!-- Validation Error Box -->
+        <div id="validation-error" class="hidden text-xs text-rose-400 font-semibold bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+          <span id="ui-validation-msg">Please fill out both your name and title before sending.</span>
+        </div>
+
+        <!-- Upload Error & Local Download Fallback Box -->
+        <div id="upload-error-box" class="hidden text-xs bg-rose-500/10 border border-rose-500/30 p-4 rounded-2xl space-y-3">
+          <div class="flex items-start gap-2 text-rose-300 font-semibold">
+            <i data-lucide="wifi-off" class="w-5 h-5 shrink-0 text-rose-400"></i>
+            <span id="ui-upload-failed-msg">Unable to upload due to connection issues. Don't worry! You can save the recording directly to your phone:</span>
+          </div>
+          <button onclick="downloadRecordingLocally()" class="w-full py-3 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-all active:scale-95">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span id="ui-download-fallback-btn">Download Recording to Phone</span>
+          </button>
+        </div>
+
+        <!-- Progress Bar & Wheel (Hidden Initially) -->
+        <div id="upload-progress-container" class="hidden space-y-2">
+          <div class="flex items-center justify-between text-xs text-teal-200 font-semibold">
+            <span id="ui-uploading-text" class="flex items-center gap-2">
+              <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-teal-400"></i>
+              Sending to Alice's Dropbox...
+            </span>
+            <span id="upload-percentage" class="text-teal-300 font-mono">0%</span>
+          </div>
+          <div class="w-full bg-[#041924] h-2.5 rounded-full overflow-hidden border border-teal-900">
+            <div id="upload-progress-bar" class="bg-teal-500 h-full w-0 transition-all duration-150"></div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-3 pt-2">
+          <button id="send-btn" onclick="sendRecording()" class="w-full py-4 px-6 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all active:scale-95">
+            <i data-lucide="send" class="w-5 h-5"></i>
+            <span id="ui-send-btn-text">Send to Alice</span>
+          </button>
+
+          <!-- PROMINENT RECORD ANOTHER BUTTON -->
+          <button id="re-record-btn" onclick="resetApp()" class="w-full py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-teal-900/60 hover:bg-teal-900/90 text-teal-100 border border-teal-700/60 transition-all active:scale-95">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            <span id="ui-record-another-btn">Record Another Song or Story</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- SUCCESS CONFIRMATION STEP (HIDDEN INITIALLY) -->
+      <div id="controls-step-3" class="hidden text-center py-6 space-y-5">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">
+          <i data-lucide="check-circle-2" class="w-10 h-10"></i>
+        </div>
+        <div>
+          <h2 id="ui-success-title" class="text-2xl font-bold text-white mb-1">Recording Sent!</h2>
+          <p id="ui-success-msg" class="text-teal-200/80 text-sm">Thank you so much for capturing this sweet memory for Alice.</p>
+        </div>
+        <button onclick="resetApp()" class="w-full py-4 px-6 rounded-2xl font-bold text-base bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 transition-all active:scale-95 flex items-center justify-center gap-2">
+          <i data-lucide="plus-circle" class="w-5 h-5"></i>
+          <span id="ui-record-another-success">Record Another Song or Story</span>
+        </button>
+      </div>
+
+    </main>
+
+    <!-- FOOTER WITH PASSCODE-PROTECTED SETTINGS -->
+    <footer class="text-center mt-8 pt-4 border-t border-teal-900/60 text-xs text-teal-400/60 flex items-center justify-between px-2">
+      <span>Sound Capsule &copy; 2026</span>
+      <button onclick="openPasscodeModal()" class="hover:text-teal-300 flex items-center gap-1 transition-colors">
+        <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+        <span id="ui-settings-footer">Admin Settings</span>
+      </button>
+    </footer>
+
+  </div>
+
+  <!-- PASSCODE MODAL -->
+  <div id="passcode-modal" class="fixed inset-0 bg-[#020e14]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#092b3e] border border-teal-700/60 rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 id="ui-passcode-title" class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="shield-lock" class="w-5 h-5 text-teal-300"></i>
+          Admin Access
+        </h3>
+        <button onclick="closePasscodeModal()" class="text-teal-300 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <p id="ui-passcode-prompt" class="text-xs text-teal-200/80">Enter your 4-digit passcode to edit settings.</p>
+      <input type="password" id="passcode-input" maxlength="4" placeholder="••••" class="w-full text-center text-2xl tracking-widest bg-[#041924] border border-teal-800 rounded-xl py-2 text-white focus:outline-none focus:border-teal-400">
+      <div id="passcode-error" class="hidden text-xs text-rose-400 text-center font-semibold">
+        Incorrect passcode. Please try again.
+      </div>
+      <button onclick="verifyPasscode()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-sm transition-all">
+        Unlock Settings
+      </button>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL (LOCKED) -->
+  <div id="settings-modal" class="fixed inset-0 bg-[#020e14]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#092b3e] border border-teal-700/60 rounded-3xl p-6 w-full max-w-md space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-teal-800/80 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="settings" class="w-5 h-5 text-teal-300"></i>
+          Admin Configuration
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-teal-300 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-teal-200 mb-1">Audio Format & Quality</label>
+          <select id="audio-format-select" class="w-full bg-[#041924] border border-teal-800 rounded-xl p-3 text-white focus:outline-none focus:border-teal-400">
+            <option value="m4a">AAC / M4A — Compressed High Quality (Default - Smaller File Size)</option>
+            <option value="wav">WAV — Uncompressed Lossless (48 kHz Studio Quality)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-teal-200 mb-1">Dropbox Refresh Token</label>
+          <textarea id="dropbox-token-input" rows="3" class="w-full bg-[#041924] border border-teal-800 rounded-xl p-3 text-white font-mono text-xs focus:outline-none focus:border-teal-400"></textarea>
+        </div>
+      </div>
+
+      <div class="pt-2 flex gap-2">
+        <button onclick="saveSettings()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm transition-all">
+          Save Settings
+        </button>
+        <button onclick="closeSettingsModal()" class="py-3 px-4 bg-teal-900 hover:bg-teal-800 text-teal-200 font-bold rounded-xl text-sm transition-all">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP SCRIPT LOGIC -->
+  <script>
+    // DROPBOX OAUTH CONFIGURATION
+    const DROPBOX_APP_KEY = "itrwhdbrt4amrh6";
+    const DROPBOX_APP_SECRET = "vb5xxv0bt4qqna0";
+    const DEFAULT_REFRESH_TOKEN = "sbQqEhm0cdQAAAAAAAAAAVgFZe05kOgZ4ve3_h1KecNSOP5QgL5g96gIS4-Kg7uF";
+
+    // DIAGRAM IMAGE URLS BY LANGUAGE
+    const diagramImages = {
+      en: "https://github.com/xStix99x/sound-capsule/blob/main/Diagram.jpg?raw=true",
+      es: "https://github.com/xStix99x/sound-capsule/blob/main/diagram%20spanish.jpeg?raw=true"
+    };
+
+    // TRANSLATIONS DICTIONARY
+    const i18n = {
+      en: {
+        title: "Sound Capsule",
+        subtitle: "Record a story, song, or lullaby for <span class='font-bold text-teal-300'>Alice</span> directly from your phone! Feel free to include a personal note as well.",
+        warning: "<strong class='font-semibold text-amber-300'>Please record in a quiet room, and be sure you aren't using any bluetooth headphones or hearing aids.</strong>",
+        tipsTitle: "💡 Tips for the Best Recording",
+        tip1: "Hold the phone about 6 to 8 inches away from your mouth.",
+        tip2: "Turn off background TVs, fans, or AC units.",
+        tip3: "Do not use bluetooth headphones or hearing aids; a dedicated microphone is okay.",
+        readyText: "Ready to record",
+        startRecord: "Start Recording",
+        stopRecord: "Stop & Review",
+        labelName: "Your Name *",
+        labelTitle: "Song or Story Title *",
+        placeholderName: "e.g. Grandma Helen",
+        placeholderTitle: "e.g. You Are My Sunshine",
+        validationMsg: "Please fill out both your name and title before sending.",
+        uploadFailedMsg: "Unable to upload due to connection issues. Don't worry! You can save the recording directly to your phone:",
+        downloadFallbackBtn: "Download Recording to Phone",
+        uploading: "Sending to Alice's Dropbox...",
+        sendBtn: "Send to Alice",
+        recordAnother: "Record Another Song or Story",
+        successTitle: "Recording Sent!",
+        successMsg: "Thank you so much for capturing this sweet memory for Alice.",
+        settingsFooter: "Admin Settings",
+        passcodeTitle: "Admin Access",
+        passcodePrompt: "Enter your 4-digit passcode to edit settings."
+      },
+      es: {
+        title: "Sound Capsule",
+        subtitle: "¡Graba una historia, canción o nana para <span class='font-bold text-teal-300'>Alice</span> directamente desde tu teléfono! ¡Siéntete libre de incluir una nota personal también!",
+        warning: "<strong class='font-semibold text-amber-300'>Por favor, graba en una habitación silenciosa y asegúrate de no usar auriculares Bluetooth ni audífonos.</strong>",
+        tipsTitle: "💡 Consejos para la Mejor Grabación",
+        tip1: "Sostén el teléfono a unos 15 o 20 cm de tu boca.",
+        tip2: "Apaga televisores, ventiladores o aire acondicionado de fondo.",
+        tip3: "No uses auriculares Bluetooth ni audífonos; un micrófono dedicado está bien.",
+        readyText: "Listo para grabar",
+        startRecord: "Iniciar Grabación",
+        stopRecord: "Detener y Revisar",
+        labelName: "Tu Nombre *",
+        labelTitle: "Título de la Canción u Historia *",
+        placeholderName: "ej. Abuela Elena",
+        placeholderTitle: "ej. Cielito Lindo",
+        validationMsg: "Por favor completa tu nombre y el título antes de enviar.",
+        uploadFailedMsg: "No se pudo subir debido a problemas de conexión. ¡No te preocupes! Puedes guardar la grabación directamente en tu teléfono:",
+        downloadFallbackBtn: "Descargar Grabación en el Teléfono",
+        uploading: "Enviando al Dropbox de Alice...",
+        sendBtn: "Enviar a Alice",
+        recordAnother: "Grabar Otra Canción o Historia",
+        successTitle: "¡Grabación Enviada!",
+        successMsg: "Muchas gracias por capturar este hermoso recuerdo para Alice.",
+        settingsFooter: "Ajustes de Admin",
+        passcodeTitle: "Acceso de Admin",
+        passcodePrompt: "Ingresa tu código de 4 dígitos para editar los ajustes."
+      }
+    };
+
+    let currentLang = 'en';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      const t = i18n[lang];
+
+      document.getElementById('lang-en').className = lang === 'en' 
+        ? "px-3 py-1.5 rounded-full transition-all bg-rose-600 text-white shadow-sm"
+        : "px-3 py-1.5 rounded-full transition-all text-teal-300 hover:text-white";
+        
+      document.getElementById('lang-es').className = lang === 'es' 
+        ? "px-3 py-1.5 rounded-full transition-all bg-rose-600 text-white shadow-sm"
+        : "px-3 py-1.5 rounded-full transition-all text-teal-300 hover:text-white";
+
+      document.getElementById('ui-title').innerText = t.title;
+      document.getElementById('ui-subtitle').innerHTML = t.subtitle;
+      document.getElementById('ui-warning').innerHTML = t.warning;
+      document.getElementById('ui-tips-title').innerHTML = `<i data-lucide="lightbulb" class="w-4 h-4 text-amber-400"></i> ${t.tipsTitle}`;
+      document.getElementById('ui-tip-1').innerText = t.tip1;
+      document.getElementById('ui-tip-2').innerText = t.tip2;
+      document.getElementById('ui-tip-3').innerText = t.tip3;
+      
+      document.getElementById('diagram-img').src = diagramImages[lang];
+      document.getElementById('ui-ready-text').innerText = t.readyText;
+      
+      if (!isRecording) {
+        document.getElementById('record-btn-text').innerText = t.startRecord;
+      } else {
+        document.getElementById('record-btn-text').innerText = t.stopRecord;
+      }
+
+      document.getElementById('ui-label-name').innerHTML = `${t.labelName.split('*')[0]} <span class="text-rose-400">*</span>`;
+      document.getElementById('ui-label-title').innerHTML = `${t.labelTitle.split('*')[0]} <span class="text-rose-400">*</span>`;
+      document.getElementById('user-name').placeholder = t.placeholderName;
+      document.getElementById('song-title').placeholder = t.placeholderTitle;
+      document.getElementById('ui-validation-msg').innerText = t.validationMsg;
+      document.getElementById('ui-upload-failed-msg').innerText = t.uploadFailedMsg;
+      document.getElementById('ui-download-fallback-btn').innerText = t.downloadFallbackBtn;
+      document.getElementById('ui-uploading-text').childNodes[2].nodeValue = " " + t.uploading;
+      document.getElementById('ui-send-btn-text').innerText = t.sendBtn;
+      document.getElementById('ui-record-another-btn').innerText = t.recordAnother;
+      document.getElementById('ui-success-title').innerText = t.successTitle;
+      document.getElementById('ui-success-msg').innerText = t.successMsg;
+      document.getElementById('ui-record-another-success').innerText = t.recordAnother;
+      document.getElementById('ui-settings-footer').innerText = t.settingsFooter;
+      document.getElementById('ui-passcode-title').innerText = t.passcodeTitle;
+      document.getElementById('ui-passcode-prompt').innerText = t.passcodePrompt;
+      lucide.createIcons();
+    }
+
+    function toggleTips() {
+      const content = document.getElementById('tips-content');
+      const chevron = document.getElementById('tips-chevron');
+      content.classList.toggle('hidden');
+      chevron.classList.toggle('rotate-180');
+    }
+
+    // AUDIO RECORDING LOGIC
+    let mediaRecorder;
+    let audioChunks = [];
+    let audioBlob = null;
+    let isRecording = false;
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    let wakeLock = null;
+
+    let audioCtx, analyser, dataArray, canvasCtx, animationFrameId;
+
+    async function toggleRecording() {
+      if (!isRecording) {
+        startRecording();
+      } else {
+        stopRecording();
+      }
+    }
+
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.log('WakeLock error:', err);
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) {
+        wakeLock.release().then(() => { wakeLock = null; });
+      }
+    }
+
+    async function startRecording() {
+      try {
+        const formatSetting = localStorage.getItem('app_audio_format') || 'm4a';
+        const sampleRate = 48000;
+
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { 
+            echoCancellation: false, 
+            noiseSuppression: false, 
+            autoGainControl: false,
+            sampleRate: sampleRate
+          } 
+        });
+
+        requestWakeLock();
+
+        const options = {};
+        if (formatSetting === 'm4a' && MediaRecorder.isTypeSupported('audio/mp4')) {
+          options.mimeType = 'audio/mp4';
+        } else if (formatSetting === 'm4a' && MediaRecorder.isTypeSupported('audio/aac')) {
+          options.mimeType = 'audio/aac';
+        }
+
+        mediaRecorder = new MediaRecorder(stream, options);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = event => {
+          if (event.data.size > 0) audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          releaseWakeLock();
+          const rawBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+          
+          if (formatSetting === 'wav') {
+            audioBlob = await convertToWav(rawBlob, 48000);
+          } else {
+            audioBlob = rawBlob;
+          }
+
+          const audioUrl = URL.createObjectURL(audioBlob);
+          document.getElementById('audio-preview').src = audioUrl;
+          
+          document.getElementById('controls-step-1').classList.add('hidden');
+          document.getElementById('controls-step-2').classList.remove('hidden');
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+
+        document.getElementById('record-btn-text').innerText = i18n[currentLang].stopRecord;
+        document.getElementById('record-btn').className = "w-full py-4 px-6 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-3 transition-all duration-200 bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/30 recording-pulse";
+        
+        document.getElementById('idle-icon').classList.add('hidden');
+        document.getElementById('visualizer').classList.remove('hidden');
+        document.getElementById('timer-display').classList.remove('hidden');
+
+        secondsElapsed = 0;
+        updateTimerDisplay();
+        timerInterval = setInterval(() => {
+          secondsElapsed++;
+          updateTimerDisplay();
+        }, 1000);
+
+        setupVisualizer(stream);
+
+      } catch (err) {
+        alert("Microphone access is required to record audio.");
+        console.error(err);
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        isRecording = false;
+
+        clearInterval(timerInterval);
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+        document.getElementById('record-btn').className = "w-full py-4 px-6 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-3 transition-all duration-200 bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30";
+      }
+    }
+
+    function updateTimerDisplay() {
+      const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+      const secs = String(secondsElapsed % 60).padStart(2, '0');
+      document.getElementById('timer-display').innerText = `${mins}:${secs}`;
+    }
+
+    function setupVisualizer(stream) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      const source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      analyser.fftSize = 64;
+      const bufferLength = analyser.frequencyBinCount;
+      dataArray = new Uint8Array(bufferLength);
+
+      const canvas = document.getElementById('visualizer');
+      canvasCtx = canvas.getContext('2d');
+
+      function draw() {
+        animationFrameId = requestAnimationFrame(draw);
+        analyser.getByteFrequencyData(dataArray);
+
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+        const barWidth = (canvas.width / bufferLength) * 2.5;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+          const barHeight = (dataArray[i] / 255) * canvas.height;
+          canvasCtx.fillStyle = `rgb(45, 212, 191)`;
+          canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+          x += barWidth;
+        }
+      }
+      draw();
+    }
+
+    // WAV ENCODER (48 kHz)
+    async function convertToWav(blob, targetSampleRate = 48000) {
+      const arrayBuffer = await blob.arrayBuffer();
+      const tempAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: targetSampleRate });
+      const audioBuffer = await tempAudioCtx.decodeAudioData(arrayBuffer);
+      return bufferToWave(audioBuffer, audioBuffer.length);
+    }
+
+    function bufferToWave(abuffer, len) {
+      const numOfChan = abuffer.numberOfChannels;
+      const length = len * numOfChan * 2 + 44;
+      const buffer = new ArrayBuffer(length);
+      const view = new DataView(buffer);
+      const channels = [];
+      let sample;
+      let offset = 0;
+      let pos = 0;
+
+      function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
+      function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
+
+      setUint32(0x46464952); // "RIFF"
+      setUint32(length - 8);
+      setUint32(0x45564157); // "WAVE"
+      setUint32(0x20746d66); // "fmt "
+      setUint32(16);
+      setUint16(1);
+      setUint16(numOfChan);
+      setUint32(abuffer.sampleRate);
+      setUint32(abuffer.sampleRate * 2 * numOfChan);
+      setUint16(numOfChan * 2);
+      setUint16(16);
+      setUint32(0x61746164); // "data"
+      setUint32(length - pos - 4);
+
+      for (let i = 0; i < abuffer.numberOfChannels; i++) {
+        channels.push(abuffer.getChannelData(i));
+      }
+
+      while (offset < len) {
+        for (let i = 0; i < numOfChan; i++) {
+          sample = Math.max(-1, Math.min(1, channels[i][offset]));
+          sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+          view.setInt16(pos, sample, true);
+          pos += 2;
+        }
+        offset++;
+      }
+
+      return new Blob([buffer], { type: "audio/wav" });
+    }
+
+    // SAFE FILENAME SANITIZATION
+    function getFormattedFileName() {
+      const userName = document.getElementById('user-name').value.trim() || 'Anonymous';
+      const songTitle = document.getElementById('song-title').value.trim() || 'Untitled';
+      const formatSetting = localStorage.getItem('app_audio_format') || 'm4a';
+      const ext = formatSetting === 'wav' ? 'wav' : 'm4a';
+      
+      const sanitize = str => str.replace(/[/\\:*?"<>|]/g, '_').trim();
+      return `${sanitize(userName)} - ${sanitize(songTitle)}.${ext}`;
+    }
+
+    function downloadRecordingLocally() {
+      if (!audioBlob) return;
+      const fileName = getFormattedFileName();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(audioBlob);
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // AUTOMATIC ACCESS TOKEN REFRESH LOGIC
+    async function getFreshAccessToken() {
+      const refreshToken = localStorage.getItem('app_dropbox_refresh_token') || DEFAULT_REFRESH_TOKEN;
+      const credentials = btoa(`${DROPBOX_APP_KEY}:${DROPBOX_APP_SECRET}`);
+      
+      const response = await fetch('https://api.dropbox.com/oauth2/token', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to refresh access token');
+      }
+
+      const data = await response.json();
+      return data.access_token;
+    }
+
+    async function sendRecording(retryCount = 0) {
+      const userName = document.getElementById('user-name').value.trim();
+      const songTitle = document.getElementById('song-title').value.trim();
+      const validationError = document.getElementById('validation-error');
+      const uploadErrorBox = document.getElementById('upload-error-box');
+
+      if (!userName || !songTitle) {
+        validationError.classList.remove('hidden');
+        return;
+      }
+      validationError.classList.add('hidden');
+      uploadErrorBox.classList.add('hidden');
+
+      document.getElementById('upload-progress-container').classList.remove('hidden');
+      document.getElementById('send-btn').disabled = true;
+
+      try {
+        // Automatically retrieve a fresh, active short-lived token using your refresh token
+        const token = await getFreshAccessToken();
+        const fileName = getFormattedFileName();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'https://content.dropboxapi.com/2/files/upload');
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+        xhr.setRequestHeader('Dropbox-API-Arg', JSON.stringify({
+          path: '/' + fileName,
+          mode: 'add',
+          autorename: true,
+          mute: false
+        }));
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            document.getElementById('upload-progress-bar').style.width = percent + '%';
+            document.getElementById('upload-percentage').innerText = percent + '%';
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            document.getElementById('controls-step-2').classList.add('hidden');
+            document.getElementById('controls-step-3').classList.remove('hidden');
+          } else {
+            handleUploadError(retryCount);
+          }
+        };
+
+        xhr.onerror = () => {
+          handleUploadError(retryCount);
+        };
+
+        xhr.send(audioBlob);
+
+      } catch (err) {
+        console.error("Token refresh or upload error:", err);
+        handleUploadError(retryCount);
+      }
+    }
+
+    function handleUploadError(retryCount) {
+      if (retryCount < 2) {
+        setTimeout(() => {
+          sendRecording(retryCount + 1);
+        }, 1500);
+      } else {
+        document.getElementById('upload-progress-container').classList.add('hidden');
+        document.getElementById('upload-error-box').classList.remove('hidden');
+        document.getElementById('send-btn').disabled = false;
+      }
+    }
+
+    function resetApp() {
+      document.getElementById('user-name').value = '';
+      document.getElementById('song-title').value = '';
+      document.getElementById('upload-progress-container').classList.add('hidden');
+      document.getElementById('upload-error-box').classList.add('hidden');
+      document.getElementById('upload-progress-bar').style.width = '0%';
+      document.getElementById('upload-percentage').innerText = '0%';
+      document.getElementById('send-btn').disabled = false;
+
+      document.getElementById('controls-step-2').classList.add('hidden');
+      document.getElementById('controls-step-3').classList.add('hidden');
+      document.getElementById('controls-step-1').classList.remove('hidden');
+
+      document.getElementById('visualizer').classList.add('hidden');
+      document.getElementById('timer-display').classList.add('hidden');
+      document.getElementById('idle-icon').classList.remove('hidden');
+      document.getElementById('record-btn-text').innerText = i18n[currentLang].startRecord;
+    }
+
+    // PASSCODE & SETTINGS LOGIC
+    function openPasscodeModal() {
+      document.getElementById('passcode-input').value = '';
+      document.getElementById('passcode-error').classList.add('hidden');
+      document.getElementById('passcode-modal').classList.remove('hidden');
+    }
+
+    function closePasscodeModal() {
+      document.getElementById('passcode-modal').classList.add('hidden');
+    }
+
+    function verifyPasscode() {
+      const code = document.getElementById('passcode-input').value;
+      if (code === '4859') {
+        closePasscodeModal();
+        openSettingsModal();
+      } else {
+        document.getElementById('passcode-error').classList.remove('hidden');
+      }
+    }
+
+    function openSettingsModal() {
+      document.getElementById('dropbox-token-input').value = localStorage.getItem('app_dropbox_refresh_token') || DEFAULT_REFRESH_TOKEN;
+      document.getElementById('audio-format-select').value = localStorage.getItem('app_audio_format') || 'm4a';
+      document.getElementById('settings-modal').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settings-modal').classList.add('hidden');
+    }
+
+    function saveSettings() {
+      const refreshToken = document.getElementById('dropbox-token-input').value.trim();
+      const format = document.getElementById('audio-format-select').value;
+      localStorage.setItem('app_dropbox_refresh_token', refreshToken);
+      localStorage.setItem('app_audio_format', format);
+      closeSettingsModal();
+      alert('Settings saved!');
+    }
+
+    // INITIALIZATION
+    window.addEventListener('DOMContentLoaded', () => {
+      setLanguage('en');
+    });
+  </script>
+</body>
+</html>
