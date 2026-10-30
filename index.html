@@ -125,14 +125,14 @@
             <label id="ui-label-name" class="block text-xs font-semibold uppercase tracking-wider text-teal-200/90 mb-1">
               Your Name <span class="text-rose-400">*</span>
             </label>
-            <input type="text" id="user-name" placeholder="e.g. Grandma Helen" class="w-full bg-[#041924]/90 border border-teal-800/80 rounded-xl px-4 py-3 text-sm text-white placeholder-teal-600/70 focus:outline-none focus:border-teal-400 transition-colors">
+            <input type="text" id="user-name" placeholder="e.g. Grandma Helen" class="w-full bg-[#041924]/90 border border-teal-800/80 rounded-xl px-4 py-3 text-sm text-white placeholder-teal-600/70 focus:outline-none focus:border-teal-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           </div>
 
           <div>
             <label id="ui-label-title" class="block text-xs font-semibold uppercase tracking-wider text-teal-200/90 mb-1">
               Song or Story Title <span class="text-rose-400">*</span>
             </label>
-            <input type="text" id="song-title" placeholder="e.g. You Are My Sunshine" class="w-full bg-[#041924]/90 border border-teal-800/80 rounded-xl px-4 py-3 text-sm text-white placeholder-teal-600/70 focus:outline-none focus:border-teal-400 transition-colors">
+            <input type="text" id="song-title" placeholder="e.g. You Are My Sunshine" class="w-full bg-[#041924]/90 border border-teal-800/80 rounded-xl px-4 py-3 text-sm text-white placeholder-teal-600/70 focus:outline-none focus:border-teal-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           </div>
         </div>
 
@@ -168,15 +168,14 @@
           </div>
         </div>
 
-        <!-- Action Buttons -->
+        <!-- Action Buttons (Visible simultaneously after recording) -->
         <div class="space-y-3 pt-2">
-          <button id="send-btn" onclick="sendRecording()" class="w-full py-4 px-6 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all active:scale-95">
+          <button id="send-btn" onclick="sendRecording()" class="w-full py-4 px-6 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none">
             <i data-lucide="send" class="w-5 h-5"></i>
             <span id="ui-send-btn-text">Send to Alice</span>
           </button>
 
-          <!-- PROMINENT RECORD ANOTHER BUTTON -->
-          <button id="re-record-btn" onclick="resetApp()" class="w-full py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-teal-900/60 hover:bg-teal-900/90 text-teal-100 border border-teal-700/60 transition-all active:scale-95">
+          <button id="re-record-btn" onclick="resetApp()" class="w-full py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-teal-900/60 hover:bg-teal-900/90 text-teal-100 border border-teal-700/60 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none">
             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
             <span id="ui-record-another-btn">Record Another Song or Story</span>
           </button>
@@ -480,8 +479,14 @@
           const audioUrl = URL.createObjectURL(audioBlob);
           document.getElementById('audio-preview').src = audioUrl;
           
+          // Show review section with both action buttons enabled
           document.getElementById('controls-step-1').classList.add('hidden');
           document.getElementById('controls-step-2').classList.remove('hidden');
+          document.getElementById('send-btn').disabled = false;
+          document.getElementById('re-record-btn').disabled = false;
+          document.getElementById('re-record-btn').classList.remove('hidden');
+          document.getElementById('user-name').disabled = false;
+          document.getElementById('song-title').disabled = false;
         };
 
         mediaRecorder.start();
@@ -671,11 +676,15 @@
       validationError.classList.add('hidden');
       uploadErrorBox.classList.add('hidden');
 
+      // LOCK UI CONTROLS TO PREVENT USER INTERACTION DURING UPLOAD
       document.getElementById('upload-progress-container').classList.remove('hidden');
       document.getElementById('send-btn').disabled = true;
+      document.getElementById('re-record-btn').disabled = true;
+      document.getElementById('re-record-btn').classList.add('hidden'); // Hide re-record during active upload
+      document.getElementById('user-name').disabled = true;
+      document.getElementById('song-title').disabled = true;
 
       try {
-        // Automatically retrieve a fresh, active short-lived token using your refresh token
         const token = await getFreshAccessToken();
         const fileName = getFormattedFileName();
 
@@ -725,20 +734,30 @@
           sendRecording(retryCount + 1);
         }, 1500);
       } else {
+        // RE-ENABLE UI CONTROLS IF UPLOAD FAILS COMPLETELY
         document.getElementById('upload-progress-container').classList.add('hidden');
         document.getElementById('upload-error-box').classList.remove('hidden');
         document.getElementById('send-btn').disabled = false;
+        document.getElementById('re-record-btn').disabled = false;
+        document.getElementById('re-record-btn').classList.remove('hidden');
+        document.getElementById('user-name').disabled = false;
+        document.getElementById('song-title').disabled = false;
       }
     }
 
     function resetApp() {
       document.getElementById('user-name').value = '';
       document.getElementById('song-title').value = '';
+      document.getElementById('user-name').disabled = false;
+      document.getElementById('song-title').disabled = false;
+
       document.getElementById('upload-progress-container').classList.add('hidden');
       document.getElementById('upload-error-box').classList.add('hidden');
       document.getElementById('upload-progress-bar').style.width = '0%';
       document.getElementById('upload-percentage').innerText = '0%';
       document.getElementById('send-btn').disabled = false;
+      document.getElementById('re-record-btn').disabled = false;
+      document.getElementById('re-record-btn').classList.remove('hidden');
 
       document.getElementById('controls-step-2').classList.add('hidden');
       document.getElementById('controls-step-3').classList.add('hidden');
